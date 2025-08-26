@@ -19,6 +19,7 @@ from scripts.cat import save_load
 from scripts.cat.enums import CatAge, CatRank, CatSocial, CatGroup
 from scripts.cat.history import History
 from scripts.cat.names import Name
+from scripts.cat.genetics.pelt_genome import PeltGenome
 from scripts.cat.pelts import Pelt
 from scripts.cat.personality import Personality
 from scripts.cat.skills import CatSkills
@@ -131,8 +132,8 @@ class Cat:
         example=False,
         faded=False,
         skill_dict=None,
-        pelt_genotype: PeltGenotype = None,
-        pelt: Pelt = None,
+        pelt_genome=None,
+        pelt=None,
         loading_cat=False,  # Set to true if you are loading a cat at start-up.
         *,
         disable_random=False,
@@ -187,6 +188,7 @@ class Cat:
         self.parent1 = parent1
         self.parent2 = parent2
         self.adoptive_parents = adoptive_parents if adoptive_parents else []
+        self.pelt_genome = pelt_genome if pelt_genome else PeltGenome()
         self.pelt = pelt if pelt else Pelt()
         self.former_mentor = []
         self.patrol_with_mentor = 0
@@ -320,8 +322,12 @@ class Cat:
             )
         else:
             biome = None
+        
         # NAME
         # load_existing_name is needed so existing cats don't get their names changed/fixed for no reason
+        if True: # Ano:TODO
+            self.pelt.init_pelt_from_genome(self.pelt_genome)
+
         if self.pelt is not None:
             self.name = Name(
                 prefix,
@@ -433,7 +439,13 @@ class Cat:
             [Cat.fetch_cat(i) for i in (self.parent1, self.parent2) if i],
             self.age,
         )
-
+        self.gender = self.pelt_genome.phenotype["sex"][0]
+        ## if realistic pelt generation is selected
+        if True and self.parent1 and self.parent2: #Ano:TODO
+            self.pelt_genome.from_parents(self.parent1.pelt_genome, self.parent2.pelt_genome)
+        if True:
+            self.pelt.init_pelt_from_genome(self.pelt_genome)
+        
         # Personality
         if disable_random:
             self.personality = Personality(
@@ -3427,7 +3439,7 @@ def create_cat(rank, moons=None, biome=None):
 # Twelve example cats
 def create_example_cats():
     warrior_indices = sample(range(12), 3)
-
+    
     for cat_index in range(12):
         if cat_index in warrior_indices:
             game.choose_cats[cat_index] = create_cat(rank=CatRank.WARRIOR)
@@ -3442,7 +3454,6 @@ def create_example_cats():
                 ]
             )
             game.choose_cats[cat_index] = create_cat(rank=random_rank)
-
 
 def create_option_preview_cat(scar: str = None, acc: str = None):
     """

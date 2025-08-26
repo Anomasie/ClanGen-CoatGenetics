@@ -1219,15 +1219,118 @@ class Pelt:
             chosen_tortie_base  # This will be none if the cat isn't a tortie.
         )
         return chosen_white
+    
+    def init_pelt_from_genome(self, pelt_genome):
+        # length
+        self.length = pelt_genome.phenotype["length"][0]
+        # colour
+        pelt_colours_series_offset = int(
+            int("diluted" in pelt_genome.phenotype["diluted"]) * 3
+            + int("caramelized" in pelt_genome.phenotype["diluted"]) * 6
+            + int("smoked" in pelt_genome.phenotype["hair tips"])
+            + int("shaded" in pelt_genome.phenotype["hair tips"]) * 2
+        )
+        if "white" in pelt_genome.phenotype["color"]:
+            self.colour = "WHITE"
+        else:
+            if "black" in pelt_genome.phenotype["color"]:
+                self.colour = pelt_genome.pelt_colours_black_series[ pelt_colours_series_offset ]
+            elif "brown" in pelt_genome.phenotype["color"]:
+                self.colour = pelt_genome.pelt_colours_brown_series[ pelt_colours_series_offset ]
+            elif "brown" in pelt_genome.phenotype["color"]:
+                self.colour = pelt_genome.pelt_colours_cinnamon_series[ pelt_colours_series_offset ]
+            else:
+                self.colour = pelt_genome.pelt_colours_red_series[ pelt_colours_series_offset ]
 
-    def init_pattern_color(self, parents, gender) -> bool:
+        # white_patches
+        if "full-color" in pelt_genome.phenotype["spots"]:
+            self.white_patches = None
+        elif "small white spots" in pelt_genome.phenotype["spots"]:
+            self.white_patches = choice(choice([self.little_white, self.mid_white]))
+        elif "big white spots" in pelt_genome.phenotype["spots"]:
+            self.white_patches = choice(choice([self.high_white, self.mostly_white]))
+        
+        # eye_color
+        self.eye_color = pelt_genome.get_pelt_eye_color(self, pelt_genome.phenotype["eyes"][0])
+        # eye_colour2
+        if len(pelt_genome.phenotype["eyes"]) > 1:
+            self.eye_colour2 = pelt_genome.get_pelt_eye_color(self, pelt_genome.phenotype["eyes"][1])
+        else:
+            self.eye_colour2 = None
+
+        # stripes
+        if "white" in pelt_genome.phenotype["color"]:
+            self.name = "SingleColour"
+        else:
+            match pelt_genome.phenotype["stripes"][-1]:
+                case "no stripes":
+                    self.name = "SingleColour"
+                case "blotched":
+                    self.name = choice(pelt_genome.pelt_patterns_blotched)
+                case "mackerel":
+                    self.name = choice(pelt_genome.pelt_patterns_mackerel)
+                case "spotted":
+                    self.name = choice(pelt_genome.pelt_patterns_spotted)
+                case "ticked":
+                    self.name = choice(pelt_genome.pelt_patterns_ticked)
+        
+        ## torties
+        if len(pelt_genome.phenotype["color"]) > 1:
+            self.tortie_base = self.name
+            self.tortie_color = pelt_genome.pelt_colours_red_series[ pelt_colours_series_offset ]
+            self.tortie_marking = choice(self.tortie_patterns)
+            self.tortie_pattern = self.name
+        else:
+            self.tortie_base = None
+            self.tortie_color = None
+            self.tortie_marking = None
+            self.tortie_pattern = None
+        
+        # vitiligo
+        if "fading" in pelt_genome.phenotype["spots"]:
+            self.vitiligo = choice(self.vit)
+        else:
+            self.vitiligo = None
+
+        # points
+        self.points = None
+        if self.colour != "WHITE":
+            match pelt_genome.phenotype["pointer"][0]:
+                case "mink":
+                    self.points = choice(["SEALPOINT", "MINKPOINT"])
+                case "burma":
+                    self.points = "COLOURPOINT"
+                case "siam":
+                    self.points = "RAGDOLL"
+            if not self.points:
+                if "smoked" in pelt_genome.phenotype["hair tips"] or "shaded" in pelt_genome.phenotype["hair tips"]:
+                    self.points = "SEPIAPOINT"
+
+        # accessory: don't change
+        # paralyzed: don't change
+        # opacity: don't change
+        # scars: don't change
+
+        # tint: don't change & white_patches_tint: don't change
+        # skin: don't change
+        
+        # kitten_sprite: don't change
+        # adol_sprite: don't change
+        # senior_sprite: don't change
+        # para_adult_sprite: don't change
+        # reverse: don't change
+
+    def init_pattern_color(self, parents=None, gender=None, pelt_genome=None) -> bool:
         """Inits self.name, self.colour, self.length,
         self.tortie_base and determines if the cat
         will have white patche or not.
         Return TRUE is the cat should have white patches,
         false is not."""
 
-        if parents:
+        if pelt_genome:
+            self.init_pelt_from_genome(pelt_genome)
+            chosen_white = False
+        elif parents:
             # If the cat has parents, use inheritance to decide pelt.
             chosen_white = self.pattern_color_inheritance(parents, gender)
         else:
