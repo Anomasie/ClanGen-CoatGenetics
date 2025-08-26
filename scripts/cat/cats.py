@@ -131,6 +131,7 @@ class Cat:
         example=False,
         faded=False,
         skill_dict=None,
+        pelt_genotype: PeltGenotype = None,
         pelt: Pelt = None,
         loading_cat=False,  # Set to true if you are loading a cat at start-up.
         *,
@@ -152,6 +153,7 @@ class Cat:
         :param example: If cat is an example cat, default False
         :param faded: If cat is faded, default False
         :param skill_dict: TODO find a good definition for this
+        :param pelt_genotype: DNA-dictionary for pelt inheritance
         :param pelt: Body details, default None
         :param loading_cat: If loading a cat rather than generating a new one, default False
         :param disable_random: If True, disables as much random generation junk as possible
