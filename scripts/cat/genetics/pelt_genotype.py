@@ -1,6 +1,14 @@
 import random
 from random import choice
 
+import json
+
+# load json files
+with open('pelt_genotypes.json') as f:
+    pelt_genotypes = json.load(f)
+with open('pelt_phenotypes.json') as f:
+    pelt_phenotypes = json.load(f)
+
 class PeltGenome:
     # base color series
     pelt_colours_black_series = [
@@ -50,15 +58,15 @@ class PeltGenome:
 
     # patterns
     ## Missing: SingleColour, TwoColour, Smoke, Tortie, Calico
-    pelt_patterns_mackerel = [
-        "Mackerel",
-        "Masked"
-    ]
     pelt_patterns_blotched = [
         "Tabby",
         "Classic",
         "Sokoke",
         "Marbled"
+    ]
+    pelt_patterns_mackerel = [
+        "Mackerel",
+        "Masked"
     ]
     pelt_patterns_spotted = [
         "Speckled",
@@ -73,39 +81,261 @@ class PeltGenome:
     
     def __init__(
         self,
+        genotype: dict = None,
     ) -> None:
-        print("initialized!")
+        self.genotype = genotype
+        if genotype:
+            self.genotype = genotype
+        else:
+            self.random_pelt_genotype()
+        self.phenotype = self.get_phenotype()
+
+    def check_genotype(self) -> bool:
+        # check dna
+        if not self.genotype:
+            print("WARNING in check_genotype: no genotype")
+            return False
+        for locus in pelt_genotypes.keys():
+            if locus in self.genotype.keys():
+                # enough allels?
+                if len(self.genotype[locus]) > 2:
+                    print("WARNING in check_genotype: too many allels")
+                    return False # too many allels
+                elif len(self.genotype[locus]) == 1 and locus != "X":
+                    print("WARNING in check_genotype: too few allels")
+                    return True # too few allels
+                elif len(self.genotype[locus]) == 0 and locus != "Y":
+                    print("WARNING in check_genotype: too few allels for a female cat")
+                    return False # too few allels
+    			# does this allel exist?
+                for allel in self.genotype[locus]:
+                    if not allel in pelt_genotypes[locus]:
+                        print("WARNING in check_genotype: allel ", allel, " not known at locus ", locus)
+                        return False
+            # chromosome missing => damaged dna
+            else:
+                print("WARNING in check_genotype: missing allel")
+                return False
+        return True
     
-    def pattern_color_inheritance_realistic(self, parents: tuple = (), gender="female"):
-        # setting parent pelt categories
-        # We are using a set, since we don't need this to be ordered, and sets deal with removing duplicates.
+    def is_female(self) -> bool:
+        if self.check_genotype():
+            return not "Y" in self.genotype["X"]
+        else:
+            print("ERROR in is_female: invalid dna")
+    
+    # ------------------------------------------------------------------------------------------------------------#
+    #   RANDOM GENOME GENERATION
+    # ------------------------------------------------------------------------------------------------------------#
+
+    def random_pelt_genotype(self, female = choice([True, False])):
+        # random dna
+        self.genotype = {}
+        for chromosome in pelt_genotypes.keys():
+            self.genotype[chromosome] = [
+                self.random_trait(pelt_genotypes[chromosome]),
+                self.random_trait(pelt_genotypes[chromosome])
+            ]
+            self.genotype[chromosome].sort()
+        if not female: # delete second X-chromosome
+            self.genotype["X"] = [self.genotype["X"][0]]
+
+    def random_trait(self, options):
+        given_trait = ""
+        random_number = random.randint(1, 100)
+        summe = 0
+        for option in options.keys():
+            summe += options[option]["rarity"]
+            if given_trait == "" and random_number <= summe:
+                given_trait = options[option]["gen"]
+        return given_trait
+
+    # ------------------------------------------------------------------------------------------------------------#
+    #   REALISTIC INHERITANCE
+    # ------------------------------------------------------------------------------------------------------------#
+
+    def from_parents( self, parent_1: PeltGenome = None, parent_2: PeltGenome = None ):
+        # right amount of parent dna?
+        if not parent_1 or not parent_1.check_genotype():
+            parent_1.random_pelt_genotype(True)
+        if not parent_2 or not parent_2.check_genotype():
+            parent_2.random_pelt_genotype(
+                not parent_1.is_female()
+            )
         
+        # generate kitten_dna
+        self.genotype = {}
+        # go through every chromosome
+        for chromosome in parent_1.genotype.keys():
+            if chromosome != "X":
+                self.genotype[chromosome] = [choice(parent_1.genotype[chromosome]), choice(parent_2.genotype[chromosome])]
+            # the kitten shall become a female
+            elif random.random() < 0.5:
+                self.genotype[chromosome] = [choice(parent_1.genotype[chromosome]), choice(parent_2.genotype[chromosome])]
+    		# the kitten will become a male
+            else:
+                self.genotype[chromosome] = [choice(parent_1.genotype[chromosome])]
+            self.genotype[chromosome].sort() #2
 
-        # ------------------------------------------------------------------------------------------------------------#
-        #   PELT
-        # ------------------------------------------------------------------------------------------------------------#
+    # ------------------------------------------------------------------------------------------------------------#
+    #   GENOTYPE -> PHENOTYPE
+    # ------------------------------------------------------------------------------------------------------------#
 
+    def has_trait(self, trait) -> bool:
+        if "require" in trait.keys():
+            for condition in trait["require"]:
+                # size requirements
+                if "size" in condition.keys():
+                    if len(self.genotype[condition["locus"]]) != condition["size"]:
+                        return False
+                # allel requirements
+                if "gen" in condition.keys():
+                    # specific allels required
+                    if type(condition["gen"]) is list:
+                        if self.genotype[condition["locus"]] != condition["gen"]:
+                            return False
+                    else:
+                        if not condition["gen"] in self.genotype[condition["locus"]]:
+                            return False
+        return True
+    
+    def get_phenotype(self) -> dict:
+        phenotype = {}
+        for feature in pelt_phenotypes.keys(): # such as diluted, color, ...
+            result = []
+            found = False
+            exclusive_mode = True
+            # go through every possible option
+            for option in pelt_phenotypes[feature]:
+                if not found:
+                    if "exclusive" in option.keys():
+                        # case 1: option needs to stand alone
+                        if option["exclusive"] and exclusive_mode:
+                            if self.has_trait(option):
+                                result.append(option["trait"])
+                                found = True
+                        # case 2: one other trait can be appended after this one
+                        elif not option["exclusive"]:
+                            if self.has_trait(option):
+                                result.append(option["trait"])
+                                exclusive_mode = False
+                    else:
+                        if self.has_trait(option):
+                            result.append(option["trait"])
+                            found = True # finish searching
+            phenotype[feature] = result
+        return phenotype
+
+    def get_pelt_eye_color(self, pelt, color):
+        match color:
+            case "red":
+                return "COPPER"
+            case "blue":
+                return choice(pelt.blue_eyes)
+            case "brown":
+                return choice("BRONZE", "AMBER", "HAZEL")
+            case "green":
+                return choice(pelt.green_eyes)
+        return choice(pelt.yellow_eyes)
+    
+    def get_pelt(self, pelt: Pelt = Pelt()) -> Pelt:
+        # length
+        pelt.length = self.phenotype["length"]
+        # colour
+        pelt_colours_series_offset = int(
+            int("diluted" in self.phenotype["diluted"]) * 3
+            + int("caramelized" in self.phenotype["diluted"]) * 6
+            + int("smoked" in self.phenotype["hair tips"])
+            + int("shaded" in self.phenotype["hair tips"]) * 2
+        )
+        if "white" in self.phenotype["color"]:
+            pelt.colour = "WHITE"
+        else:
+            if "black" in self.phenotype["color"]:
+                pelt.colour = self.pelt_colours_black_series[ pelt_colours_series_offset ]
+            elif "brown" in self.phenotype["color"]:
+                pelt.colour = self.pelt_colours_brown_series[ pelt_colours_series_offset ]
+            elif "brown" in self.phenotype["color"]:
+                pelt.colour = self.pelt_colours_cinnamon_series[ pelt_colours_series_offset ]
+            else:
+                pelt.colour = self.pelt_colours_red_series[ pelt_colours_series_offset ]
+
+        # white_patches
+        if "full-color" in self.phenotype["spots"]:
+            pelt.white_patches = None
+        elif "small white spots" in self.phenotype["spots"]:
+            pelt.white_patches = choice(choice([pelt.little_white, pelt.mid_white]))
+        elif "big white spots" in self.phenotype["spots"]:
+            pelt.white_patches = choice(choice([pelt.high_white, pelt.mostly_white]))
         
+        # eye_color
+        pelt.eye_color = self.get_pelt_eye_color(pelt, self.phenotype["eyes"][0])
+        # eye_colour2
+        if len(self.phenotype["eyes"]) > 1:
+            pelt.eye_colour2 = self.get_pelt_eye_color(pelt, self.phenotype["eyes"][1])
+        else:
+            pelt.eye_colour2 = None
 
-        # ------------------------------------------------------------------------------------------------------------#
-        #   PELT COLOUR
-        # ------------------------------------------------------------------------------------------------------------#
+        # stripes
+        if "white" in self.phenotype["color"]:
+            self.name = "SingleColour"
+        else:
+            match self.phenotype["stripes"][-1]:
+                case "no stripes":
+                    self.name = "SingleColor"
+                case "blotched":
+                    self.name = choice(self.pelt_patterns_blotched)
+                case "mackerel":
+                    self.name = choice(self.pelt_patterns_mackerel)
+                case "spotted":
+                    self.name = choice(self.pelt_patterns_spotted)
+                case "ticked":
+                    self.name = choice(self.pelt_patterns_ticked)
         
-
-
-        # ------------------------------------------------------------------------------------------------------------#
-        #   PELT LENGTH
-        # ------------------------------------------------------------------------------------------------------------#
-
+        ## torties
+        if len(self.phenotype["color"]) > 1:
+            pelt.tortie_base = pelt.name
+            pelt.tortie_color = self.pelt_colours_red_series[ pelt_colours_series_offset ]
+            pelt.tortie_marking = choice(pelt.tortie_patterns)
+            pelt.tortie_pattern = pelt.name
+        else:
+            tortie_base = None
+            tortie_color = None
+            tortie_marking = None
+            tortie_pattern = None
         
+        # vitiligo
+        if "fading" in self.phenotype["spots"]:
+            pelt.vitiligo = choice(pelt.vit)
+        else:
+            pelt.vitiligo = None
 
-        # ------------------------------------------------------------------------------------------------------------#
-        #   PELT WHITE
-        # ------------------------------------------------------------------------------------------------------------#
+        # points
+        pelt.points = None
+        match self.phenotype["pointer"][0]:
+            case "mink":
+                pelt.points = choice("SEALPOINT", "MINKPOINTS")
+            case "burma":
+                pelt.points = "COLOURPOINT"
+            case "siam":
+                pelt.points = "RAGDOLLPOINT"
+        if not pelt.points:
+            if "smoked" in self.phenotype["hair tips"] or "shaded" in self.phenotype["hair tips"]:
+                pelt.points = "SEPIAPOINTS"
 
-        print("1!")
+        # accessory: don't change
+        # paralyzed: don't change
+        # opacity: don't change
+        # scars: don't change
 
-    def randomize_gene(locus, locus_alleles):
-        locus = set(choice(locus_alleles), choice(locus_alleles))
-
-genome = PeltGenome()
+        # tint: don't change
+        # skin: don't change
+        # white_patches_tint: don't change
+        
+        # kitten_sprite: don't change
+        # adol_sprite: don't change
+        # senior_sprite: don't change
+        # para_adult_sprite: don't change
+        # reverse: don't change
+        
+        return pelt
