@@ -11,7 +11,6 @@ from scripts.game_structure import game
 from scripts.game_structure.localization import get_lang_config
 from scripts.utility import adjust_list_text
 
-
 class Pelt:
     sprites_names = {
         "SingleColour": "single",

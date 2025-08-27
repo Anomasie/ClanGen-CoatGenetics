@@ -325,7 +325,7 @@ class Cat:
         
         # NAME
         # load_existing_name is needed so existing cats don't get their names changed/fixed for no reason
-        if True: # Ano:TODO
+        if get_clan_setting("realistic pelt behavior"):
             self.pelt.init_pelt_from_genome(self.pelt_genome)
 
         if self.pelt is not None:
@@ -441,9 +441,9 @@ class Cat:
         )
         self.gender = self.pelt_genome.phenotype["sex"][0]
         ## if realistic pelt generation is selected
-        if True and self.parent1 and self.parent2: #Ano:TODO
-            self.pelt_genome.from_parents(self.parent1.pelt_genome, self.parent2.pelt_genome)
-        if True:
+        if get_clan_setting("realistic pelt behavior"):
+            if self.parent1 and self.parent2:
+                self.pelt_genome.from_parents(self.parent1.pelt_genome, self.parent2.pelt_genome)
             self.pelt.init_pelt_from_genome(self.pelt_genome)
         
         # Personality
@@ -3313,6 +3313,7 @@ class Cat:
                 "no_kits": self.no_kits,
                 "no_retire": self.no_retire,
                 "no_mates": self.no_mates,
+                "pelt_genome": self.pelt_genome.genotype,
                 "pelt_name": self.pelt.name,
                 "pelt_color": self.pelt.colour,
                 "pelt_length": self.pelt.length,

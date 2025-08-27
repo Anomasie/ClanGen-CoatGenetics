@@ -19,7 +19,16 @@
       "trait": "amber"
     },
     {
+      "require": [
+        {
+          "gen": "er",
+          "locus": "E2"
+        }
+      ],
       "trait": "russet"
+    },
+    {
+      "trait": "copal"
     }
   ],
   "color": [

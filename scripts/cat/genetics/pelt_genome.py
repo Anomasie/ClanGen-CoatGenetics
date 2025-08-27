@@ -78,17 +78,23 @@ class PeltGenome:
         pelt_genotypes = json.load(f)
     with open('resources/genetics/pelt_phenotypes.json') as f:
         pelt_phenotypes = json.load(f)
+    with open('resources/genetics/pelt_genotypes_requirements.json') as f:
+        pelt_genotype_requirements = json.load(f)
     
     def __init__(
         self,
         genotype: dict = None,
+        phenotype: dict = None
     ) -> None:
-        self.genotype = genotype
         if genotype:
             self.genotype = genotype
+            self.phenotype = self.get_phenotype()
+        elif phenotype:
+            self.genotype = self.get_genotype(phenotype)
+            self.phenotype = phenotype
         else:
-            self.random_pelt_genotype()
-        self.phenotype = self.get_phenotype()
+            self.random_genotype()
+            self.phenotype = self.get_phenotype()
 
     def check_genotype(self) -> bool:
         # check dna
@@ -128,7 +134,7 @@ class PeltGenome:
     #   RANDOM GENOME GENERATION
     # ------------------------------------------------------------------------------------------------------------#
 
-    def random_pelt_genotype(self, female = choice([True, False])):
+    def random_genotype(self, female = None):
         # random dna
         self.genotype = {}
         for chromosome in self.pelt_genotypes.keys():
@@ -137,6 +143,8 @@ class PeltGenome:
                 self.random_trait(self.pelt_genotypes[chromosome])
             ]
             self.genotype[chromosome].sort()
+        if female is None:
+            female = choice([True, False])
         if not female: # delete second X-chromosome
             self.genotype["X"] = [self.genotype["X"][0]]
 
@@ -217,6 +225,46 @@ class PeltGenome:
                             found = True # finish searching
             phenotype[feature] = result
         return phenotype
+
+    def has_feature(self, phenotype, feature) -> bool:
+        # no requirements
+        if not "require" in feature:
+            return True
+        # check requirements
+        for requirement in feature["require"]:
+            if "feature" in requirement and not requirement["feature"] in phenotype[requirement["category"]]:
+                return False
+            if "feature_in" in requirement:
+                found_one = False
+                for has_features in phenotype[requirement["category"]]:
+                    if has_features in requirement["feature_in"]:
+                        found_one = True
+                if not found_one:
+                    return False
+            if "size" in requirement and not len(phenotype[requirement["category"]]) == requirement["size"]:
+                return False
+        return True
+
+    def get_genotype(self, phenotype) -> None:
+        genotype = {}
+        for locus in self.pelt_genotype_requirements.keys():
+            result = []
+            i = 0
+            # go through every possible option
+            for option in self.pelt_genotype_requirements[locus]:
+                if len(result) == 0 and self.has_feature(phenotype, option):
+                    if "trait" in option.keys():
+                        result = option["trait"]
+                    elif "traits" in option.keys():
+                        result = choice(option["traits"])
+                    else:
+                        result = [
+                            self.random_trait(self.pelt_genotypes[locus]),
+                            self.random_trait(self.pelt_genotypes[locus])
+                        ]
+                i += 1
+            genotype[locus] = result
+        return genotype
 
     def get_pelt_eye_color(self, pelt, color):
         match color:
