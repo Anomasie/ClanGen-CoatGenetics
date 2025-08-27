@@ -297,50 +297,6 @@
       ]
     }
   ],
-  "E2": [
-    {
-      "require": [
-        {
-          "category": "amber",
-          "feature": "copal"
-        }
-      ],
-      "trait": ["ec", "ec"]
-    },
-    {
-      "require": [
-        {
-          "category": "amber",
-          "feature": "russet"
-        }
-      ],
-      "traits": [
-        ["er", "er"],
-        ["er", "ec"]
-      ]
-    },
-    {
-      "require": [
-        {
-          "category": "amber",
-          "feature": "amber"
-        }
-      ],
-      "traits": [
-        ["e", "e"],
-        ["e", "er"],
-        ["e", "ec"]
-      ]
-    },
-    {
-      "traits": [
-        ["E", "E"],
-        ["E", "e"],
-        ["E", "er"],
-        ["E", "ec"]
-      ]
-    }
-  ],
   "EYE": [
     {
       "require": [
@@ -378,8 +334,8 @@
           "feature": "white"
         },
         {
-          "category": "eyes",
-          "feature_in": ["brown", "green", "yellow"]
+          "category": "hearing",
+          "feature": "deaf"
         }
       ],
       "traits": [

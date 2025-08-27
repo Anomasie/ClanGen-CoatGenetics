@@ -248,7 +248,9 @@ class PeltGenome:
     def get_genotype(self, pelt) -> dict:
         phenotype = {}
 
-        
+        # color
+
+        # 
 
         return self.get_genotype_from_phenotype(phenotype)
 
@@ -270,6 +272,11 @@ class PeltGenome:
                             self.random_trait(self.pelt_genotypes[locus])
                         ]
                 i += 1
+            if len(result) == 0:
+                result = [
+                    self.random_trait(self.pelt_genotypes[locus]),
+                    self.random_trait(self.pelt_genotypes[locus])
+                ]
             genotype[locus] = result
         return genotype
 

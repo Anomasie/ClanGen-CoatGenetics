@@ -286,6 +286,20 @@
       "trait": "full-color"
     }
   ],
+  "hearing": [
+    {
+      "require": [
+        {
+          "locus": "KIT",
+          "gen": "wp"
+        }
+      ],
+      "trait": "deaf"
+    },
+    {
+      "trait": "hearing"
+    }
+  ],
   "length": [
     {
       "require": [
