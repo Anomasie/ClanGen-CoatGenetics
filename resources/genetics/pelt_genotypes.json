@@ -157,29 +157,6 @@
       "rarity": 10
     }
   },
-  "E2": {
-    "E": {
-      "gen": "E",
-      "name": "not fading",
-      "rarity": 75
-    },
-    "e": {
-      "gen": "e",
-      "name": "amber",
-      "note": "recessive over E, but dominant over er",
-      "rarity": 15
-    },
-    "er": {
-      "gen": "er",
-      "name": "russet",
-      "rarity": 5
-    },
-    "ec": {
-      "gen": "ec",
-      "name": "copal",
-      "rarity": 5
-    }
-  },
   "EYE": {
     "more": {
       "gen": "more",

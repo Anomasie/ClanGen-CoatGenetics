@@ -245,7 +245,14 @@ class PeltGenome:
                 return False
         return True
 
-    def get_genotype(self, phenotype) -> None:
+    def get_genotype(self, pelt) -> dict:
+        phenotype = {}
+
+        
+
+        return self.get_genotype_from_phenotype(phenotype)
+
+    def get_genotype_from_phenotype(self, phenotype) -> dict:
         genotype = {}
         for locus in self.pelt_genotype_requirements.keys():
             result = []

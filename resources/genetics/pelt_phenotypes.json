@@ -1,36 +1,4 @@
 {
-  "amber": [
-    {
-      "require": [
-        {
-          "gen": "E",
-          "locus": "E2"
-        }
-      ],
-      "trait": "full-color"
-    },
-    {
-      "require": [
-        {
-          "gen": "e",
-          "locus": "E2"
-        }
-      ],
-      "trait": "amber"
-    },
-    {
-      "require": [
-        {
-          "gen": "er",
-          "locus": "E2"
-        }
-      ],
-      "trait": "russet"
-    },
-    {
-      "trait": "copal"
-    }
-  ],
   "color": [
     {
       "exclusive": true,
