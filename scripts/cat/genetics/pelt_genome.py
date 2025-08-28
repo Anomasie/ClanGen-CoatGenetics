@@ -175,27 +175,31 @@ class PeltGenome:
     #   GENOTYPE <-> PHENOTYPE <-> PELT
     # ------------------------------------------------------------------------------------------------------------#
 
-    # phenotype -> genotype
+    # genotype -> phenotype
 
-    def has_trait(self, trait) -> bool:
+    def has_trait(self, trait, genotype) -> bool:
         if "require" in trait.keys():
             for condition in trait["require"]:
                 # size requirements
                 if "size" in condition.keys():
-                    if len(self.genotype[condition["locus"]]) != condition["size"]:
+                    if len(genotype[condition["locus"]]) != condition["size"]:
                         return False
                 # allel requirements
                 if "gen" in condition.keys():
                     # specific allels required
                     if type(condition["gen"]) is list:
-                        if self.genotype[condition["locus"]] != condition["gen"]:
+                        if genotype[condition["locus"]] != condition["gen"]:
                             return False
                     else:
-                        if not condition["gen"] in self.genotype[condition["locus"]]:
+                        if not condition["gen"] in genotype[condition["locus"]]:
                             return False
         return True
     
-    def get_phenotype_from_genotype(self) -> dict:
+    def get_phenotype_from_genotype(self, genotype=None) -> dict:
+        if genotype is None: genotype = self.genotype
+        if not self.check_genotype(genotype):
+            print("WARNING in pelt_genome.py, get_phenotype_from_genotype: genotype not valid.")
+
         phenotype = {}
         for feature in self.pelt_phenotypes.keys(): # such as diluted, color, ...
             result = []
@@ -207,16 +211,16 @@ class PeltGenome:
                     if "exclusive" in option.keys():
                         # case 1: option needs to stand alone
                         if option["exclusive"] and exclusive_mode:
-                            if self.has_trait(option):
+                            if self.has_trait(option, genotype):
                                 result.append(option["trait"])
                                 found = True
                         # case 2: one other trait can be appended after this one
                         elif not option["exclusive"]:
-                            if self.has_trait(option):
+                            if self.has_trait(option, genotype):
                                 result.append(option["trait"])
                                 exclusive_mode = False
                     else:
-                        if self.has_trait(option):
+                        if self.has_trait(option, genotype):
                             result.append(option["trait"])
                             found = True # finish searching
             phenotype[feature] = result
@@ -332,9 +336,8 @@ class PeltGenome:
             phenotype["spots"] = [["small white spots", "small white spots", "big white spots", "big white spots", "gloves"][i]]
 
         # stripes
-        if pelt.name in ["SingleColour", "TwoColour"]:
-            phenotype["stripes"] = ["no stripes"]
-        else:
+        phenotype["stripes"] = ["no stripes"]
+        if not pelt.name in ["SingleColour", "TwoColour"]:
             all_stripe_series = [self.pelt_patterns_mackerel, self.pelt_patterns_blotched, self.pelt_patterns_spotted, self.pelt_patterns_ticked]
             possibilities = []
             for i in range(len(all_stripe_series)):
@@ -347,7 +350,7 @@ class PeltGenome:
         if not pelt.vitiligo is None and (phenotype["spots"] != ["salty licorice"] or random.random() < 0.1):
             phenotype["vitiligo"] = ["vitiligo"]
 
-        return self.get_genotype_from_phenotype(phenotype)
+        return phenotype
 
     # phenotype -> genotype
 
@@ -366,7 +369,7 @@ class PeltGenome:
                         distribution = []
                         for poss in option["traits"]:
                             distribution.append(self.get_allel_combination_probability(locus, poss))
-                        result = random.choices(option["traits"], weights=distribution)
+                        result = random.choices(option["traits"], weights=distribution)[0]
                     else:
                         result = [
                             self.random_trait(self.pelt_genotypes[locus]),
@@ -380,28 +383,40 @@ class PeltGenome:
                 ]
             genotype[locus] = result
         return genotype
+
+    # pelt -> genotype
+
+    def get_genotype_from_pelt(self, pelt, sex, permanent_condition={}) -> dict:
+        return self.get_genotype_from_phenotype(
+            self.get_phenotype_from_pelt(
+                pelt,
+                sex,
+                permanent_condition
+            )
+        )
     
     # help functions
 
-    def check_genotype(self) -> bool:
+    def check_genotype(self, genotype=None) -> bool:
+        if genotype is None: genotype = self.genotype
         # check dna
-        if not self.genotype:
+        if not genotype:
             print("WARNING in check_genotype: no genotype")
             return False
         for locus in self.pelt_genotypes.keys():
-            if locus in self.genotype.keys():
+            if locus in genotype.keys():
                 # enough allels?
-                if len(self.genotype[locus]) > 2:
-                    print("WARNING in check_genotype: too many allels")
+                if len(genotype[locus]) > 2:
+                    print("WARNING in check_genotype: too many allels at locus ", locus)
                     return False # too many allels
-                elif len(self.genotype[locus]) == 1 and locus != "X":
-                    print("WARNING in check_genotype: too few allels")
+                elif len(genotype[locus]) == 1 and locus != "X":
+                    print("WARNING in check_genotype: too few allels at locus ", locus)
                     return True # too few allels
-                elif len(self.genotype[locus]) == 0 and locus != "Y":
-                    print("WARNING in check_genotype: too few allels for a female cat")
+                elif len(genotype[locus]) == 0 and locus == "X":
+                    print("WARNING in check_genotype: too few allels at locus ", locus)
                     return False # too few allels
     			# does this allel exist?
-                for allel in self.genotype[locus]:
+                for allel in genotype[locus]:
                     if not allel in self.pelt_genotypes[locus]:
                         print("WARNING in check_genotype: allel ", allel, " not known at locus ", locus)
                         return False

@@ -95,6 +95,7 @@ def json_load():
                 parent2=cat["parent2"],
                 moons=cat["moons"],
                 eye_colour=cat["eye_colour"],
+                pelt_genotype=cat["pelt_genotype"],
                 loading_cat=True,
             )
 

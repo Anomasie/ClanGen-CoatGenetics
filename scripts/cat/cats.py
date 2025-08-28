@@ -133,7 +133,7 @@ class Cat:
         faded=False,
         skill_dict=None,
         pelt=None,
-        pelt_genome=None,   # does not effect anything as long as get_clan_setting("realistic pelt behavior") is False
+        pelt_genotype=None,   # does not effect anything as long as get_clan_setting("realistic pelt behavior") is False
         loading_cat=False,  # Set to true if you are loading a cat at start-up.
         *,
         disable_random=False,
@@ -188,8 +188,8 @@ class Cat:
         self.parent1 = parent1
         self.parent2 = parent2
         self.adoptive_parents = adoptive_parents if adoptive_parents else []
-        self.pelt = pelt if pelt else Pelt()
-        self.pelt_genome = pelt_genome if pelt_genome else PeltGenome()
+        self.pelt_genome = PeltGenome(genotype=pelt_genotype)
+        self.pelt = pelt if pelt else Pelt().get_pelt_from_genome(self.pelt_genome)
         self.former_mentor = []
         self.patrol_with_mentor = 0
         self.apprentice = []
@@ -324,8 +324,8 @@ class Cat:
             biome = None
         
         # pelt input
-        if get_clan_setting("realistic pelt behavior") and pelt_genome:
-            pelt = pelt.init_pelt_from_genome(self.pelt_genome)
+        if get_clan_setting("realistic pelt behavior") and pelt_genotype:
+            pelt = Pelt.generate_new_pelt_from_genome(self.pelt_genome)
         elif not get_clan_setting("realistic pelt behavior") and pelt:
             self.pelt_genome.init_from_pelt(pelt, self.gender, self.permanent_condition)
 
@@ -3318,7 +3318,7 @@ class Cat:
                 "no_kits": self.no_kits,
                 "no_retire": self.no_retire,
                 "no_mates": self.no_mates,
-                "pelt_genome": self.pelt_genome.genotype,
+                "pelt_genotype": self.pelt_genome.genotype,
                 "pelt_name": self.pelt.name,
                 "pelt_color": self.pelt.colour,
                 "pelt_length": self.pelt.length,
