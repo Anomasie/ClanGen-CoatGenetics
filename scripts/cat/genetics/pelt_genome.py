@@ -88,53 +88,27 @@ class PeltGenome:
     ) -> None:
         if genotype:
             self.genotype = genotype
-            self.phenotype = self.get_phenotype()
+            self.phenotype = self.get_phenotype_from_genotype()
         elif phenotype:
             self.genotype = self.get_genotype_from_phenotype(phenotype)
             self.phenotype = phenotype
         else:
             self.random_genotype()
-            self.phenotype = self.get_phenotype()
+            self.phenotype = self.get_phenotype_from_genotype()
 
-    def check_genotype(self) -> bool:
-        # check dna
-        if not self.genotype:
-            print("WARNING in check_genotype: no genotype")
-            return False
-        for locus in self.pelt_genotypes.keys():
-            if locus in self.genotype.keys():
-                # enough allels?
-                if len(self.genotype[locus]) > 2:
-                    print("WARNING in check_genotype: too many allels")
-                    return False # too many allels
-                elif len(self.genotype[locus]) == 1 and locus != "X":
-                    print("WARNING in check_genotype: too few allels")
-                    return True # too few allels
-                elif len(self.genotype[locus]) == 0 and locus != "Y":
-                    print("WARNING in check_genotype: too few allels for a female cat")
-                    return False # too few allels
-    			# does this allel exist?
-                for allel in self.genotype[locus]:
-                    if not allel in self.pelt_genotypes[locus]:
-                        print("WARNING in check_genotype: allel ", allel, " not known at locus ", locus)
-                        return False
-            # chromosome missing => damaged dna
-            else:
-                print("WARNING in check_genotype: missing allel")
-                return False
-        return True
-    
-    def is_female(self) -> bool:
-        if self.check_genotype():
-            return not "Y" in self.genotype["X"]
-        else:
-            print("ERROR in is_female: invalid dna")
+    def init_from_pelt(self, pelt, sex, permanent_conditions = {}):
+        self.phenotype = self.get_phenotype_from_pelt(pelt, sex, permanent_conditions)
+        self.genotype = self.get_genotype_from_phenotype(self.phenotype)
     
     # ------------------------------------------------------------------------------------------------------------#
     #   RANDOM GENOME GENERATION
     # ------------------------------------------------------------------------------------------------------------#
 
-    def random_genotype(self, female = None):
+    def randomize(self, sex = None) -> None:
+        self.random_genotype(female=(sex=="female"))
+        self.phenotype = self.get_phenotype_from_genotype()
+
+    def random_genotype(self, female = None) -> None:
         # random dna
         self.genotype = {}
         for chromosome in self.pelt_genotypes.keys():
@@ -148,7 +122,7 @@ class PeltGenome:
         if not female: # delete second X-chromosome
             self.genotype["X"] = [self.genotype["X"][0]]
 
-    def random_trait(self, options):
+    def random_trait(self, options) -> str:
         given_trait = ""
         random_number = random.randint(1, 100)
         summe = 0
@@ -181,24 +155,27 @@ class PeltGenome:
     #   REALISTIC INHERITANCE
     # ------------------------------------------------------------------------------------------------------------#
 
-    def from_parents( self, parent_1, parent_2 ):
+    def from_parents( self, parent_1, parent_2, sex=None):
         # generate kitten_dna
         self.genotype = {}
         # go through every chromosome
         for chromosome in parent_1.genotype.keys():
-            if chromosome != "X":
-                self.genotype[chromosome] = [choice(parent_1.genotype[chromosome]), choice(parent_2.genotype[chromosome])]
-            # the kitten shall become a female
-            elif random.random() < 0.5:
-                self.genotype[chromosome] = [choice(parent_1.genotype[chromosome]), choice(parent_2.genotype[chromosome])]
-    		# the kitten will become a male
-            else:
-                self.genotype[chromosome] = [choice(parent_1.genotype[chromosome])]
-            self.genotype[chromosome].sort() #2
+            self.genotype[chromosome] = [choice(parent_1.genotype[chromosome]), choice(parent_2.genotype[chromosome])]
+            self.genotype[chromosome].sort()
+        # sex: male kittens get their X chromosome from their mother
+        if sex == "male" or random.random() < 0.5: # male kitten
+            if parent_1.is_female():
+                self.genotype["X"] = [choice(parent_1.genotype["X"])]
+            else: # if both parents are male, then the kitten gets the second parent's X-chromosome
+                self.genotype["X"] = [choice(parent_2.genotype["X"])]
+        # set other variables
+        self.phenotype = self.get_phenotype_from_genotype()
 
     # ------------------------------------------------------------------------------------------------------------#
-    #   GENOTYPE -> PHENOTYPE
+    #   GENOTYPE <-> PHENOTYPE <-> PELT
     # ------------------------------------------------------------------------------------------------------------#
+
+    # phenotype -> genotype
 
     def has_trait(self, trait) -> bool:
         if "require" in trait.keys():
@@ -218,7 +195,7 @@ class PeltGenome:
                             return False
         return True
     
-    def get_phenotype(self) -> dict:
+    def get_phenotype_from_genotype(self) -> dict:
         phenotype = {}
         for feature in self.pelt_phenotypes.keys(): # such as diluted, color, ...
             result = []
@@ -244,6 +221,8 @@ class PeltGenome:
                             found = True # finish searching
             phenotype[feature] = result
         return phenotype
+    
+    # pelt -> phenotype
 
     def has_feature(self, phenotype, feature) -> bool:
         # no requirements
@@ -264,7 +243,7 @@ class PeltGenome:
                 return False
         return True
 
-    def get_genotype(self, pelt, sex, permanent_conditions = {}) -> dict:
+    def get_phenotype_from_pelt(self, pelt, sex, permanent_conditions = {}) -> dict:
         phenotype = {}
 
         # color & diluted & hair tips
@@ -297,12 +276,15 @@ class PeltGenome:
         all_eye_colors = [pelt.blue_eyes, pelt.green_eyes, pelt.yellow_eyes, ["COPPER"], ["BRONZE", "AMBER", "HAZEL"]]
         possibilities = []
         for i in range(len(all_eye_colors)):
-            if pelt.eye_color in all_eye_colors[i]:
+            if pelt.eye_colour in all_eye_colors[i]:
                 possibilities.append(i)
         i = 0
         if len(possibilities) > 0:
             i = choice(possibilities)
         phenotype["eyes"] = [["blue", "green", "yellow", "red", "brown"][i]]
+
+        if pelt.eye_colour2:
+            phenotype["eyes"].append("blue")
 
         # hearing
         if "deaf" in permanent_conditions:
@@ -342,7 +324,7 @@ class PeltGenome:
             all_spot_possibilities = [pelt.little_white, pelt.mid_white, pelt.high_white, pelt.mostly_white, pelt.paws_white]
             possibilities = []
             for i in range(len(all_spot_possibilities)):
-                if pelt.eye_color in all_eye_colors[i]:
+                if pelt.eye_colour in all_eye_colors[i]:
                     possibilities.append(i)
             i = 0
             if len(possibilities) > 0:
@@ -366,6 +348,8 @@ class PeltGenome:
             phenotype["vitiligo"] = ["vitiligo"]
 
         return self.get_genotype_from_phenotype(phenotype)
+
+    # phenotype -> genotype
 
     def get_genotype_from_phenotype(self, phenotype) -> dict:
         genotype = {}
@@ -396,15 +380,39 @@ class PeltGenome:
                 ]
             genotype[locus] = result
         return genotype
+    
+    # help functions
 
-    def get_pelt_eye_color(self, pelt, color):
-        match color:
-            case "red":
-                return "COPPER"
-            case "blue":
-                return choice(pelt.blue_eyes)
-            case "brown":
-                return choice(["BRONZE", "AMBER", "HAZEL"])
-            case "green":
-                return choice(pelt.green_eyes)
-        return choice(pelt.yellow_eyes)
+    def check_genotype(self) -> bool:
+        # check dna
+        if not self.genotype:
+            print("WARNING in check_genotype: no genotype")
+            return False
+        for locus in self.pelt_genotypes.keys():
+            if locus in self.genotype.keys():
+                # enough allels?
+                if len(self.genotype[locus]) > 2:
+                    print("WARNING in check_genotype: too many allels")
+                    return False # too many allels
+                elif len(self.genotype[locus]) == 1 and locus != "X":
+                    print("WARNING in check_genotype: too few allels")
+                    return True # too few allels
+                elif len(self.genotype[locus]) == 0 and locus != "Y":
+                    print("WARNING in check_genotype: too few allels for a female cat")
+                    return False # too few allels
+    			# does this allel exist?
+                for allel in self.genotype[locus]:
+                    if not allel in self.pelt_genotypes[locus]:
+                        print("WARNING in check_genotype: allel ", allel, " not known at locus ", locus)
+                        return False
+            # chromosome missing => damaged dna
+            else:
+                print("WARNING in check_genotype: missing allel")
+                return False
+        return True
+    
+    def is_female(self) -> bool:
+        if self.check_genotype():
+            return len(self.genotype["X"]) == 2
+        else:
+            print("ERROR in is_female: invalid dna")

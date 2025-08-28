@@ -132,8 +132,8 @@ class Cat:
         example=False,
         faded=False,
         skill_dict=None,
-        pelt_genome=None,
         pelt=None,
+        pelt_genome=None,   # does not effect anything as long as get_clan_setting("realistic pelt behavior") is False
         loading_cat=False,  # Set to true if you are loading a cat at start-up.
         *,
         disable_random=False,
@@ -188,8 +188,8 @@ class Cat:
         self.parent1 = parent1
         self.parent2 = parent2
         self.adoptive_parents = adoptive_parents if adoptive_parents else []
-        self.pelt_genome = pelt_genome if pelt_genome else PeltGenome()
         self.pelt = pelt if pelt else Pelt()
+        self.pelt_genome = pelt_genome if pelt_genome else PeltGenome()
         self.former_mentor = []
         self.patrol_with_mentor = 0
         self.apprentice = []
@@ -323,10 +323,14 @@ class Cat:
         else:
             biome = None
         
+        # pelt input
+        if get_clan_setting("realistic pelt behavior") and pelt_genome:
+            pelt = pelt.init_pelt_from_genome(self.pelt_genome)
+        elif not get_clan_setting("realistic pelt behavior") and pelt:
+            self.pelt_genome.init_from_pelt(pelt, self.gender, self.permanent_condition)
+
         # NAME
         # load_existing_name is needed so existing cats don't get their names changed/fixed for no reason
-        if get_clan_setting("realistic pelt behavior"):
-            self.pelt.init_pelt_from_genome(self.pelt_genome)
 
         if self.pelt is not None:
             self.name = Name(
@@ -434,17 +438,18 @@ class Cat:
         # PRONOUNS AUTO-GENERATE WHEN REQUIRED
 
         # APPEARANCE
-        self.pelt = Pelt.generate_new_pelt(
-            self.gender,
-            [Cat.fetch_cat(i) for i in (self.parent1, self.parent2) if i],
-            self.age,
-        )
-        self.gender = self.pelt_genome.phenotype["sex"][0]
-        ## if realistic pelt generation is selected
         if get_clan_setting("realistic pelt behavior"):
             if self.parent1 and self.parent2:
-                self.pelt_genome.from_parents(self.parent1.pelt_genome, self.parent2.pelt_genome)
-            self.pelt.init_pelt_from_genome(self.pelt_genome)
+                self.pelt_genome.from_parents(self.parent1.pelt_genome, self.parent2.pelt_genome, sex=self.gender)
+            else:
+                self.pelt_genome.randomize(sex=self.gender)
+            self.pelt = Pelt.generate_new_pelt_from_genome(self.pelt_genome, self.age)
+        else:
+            self.pelt = Pelt.generate_new_pelt(
+                self.gender,
+                [Cat.fetch_cat(i) for i in (self.parent1, self.parent2) if i],
+                self.age,
+            )
         
         # Personality
         if disable_random:
@@ -488,16 +493,6 @@ class Cat:
 
         if not skill_dict:
             self.skills = CatSkills.generate_new_catskills(self.status.rank, self.age)
-        
-        print("Anomasie here:")
-        print(self.pelt_genome.genotype)
-        print()
-        print(self.pelt_genome.phenotype)
-        print(self.pelt.colour)
-        print()
-        print(self.pelt_genome.get_genotype(self.pelt, self.gender, self.permanent_condition))
-        print()
-        print()
 
     def __repr__(self):
         return "CAT OBJECT:" + self.ID
