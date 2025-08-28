@@ -302,19 +302,29 @@
       "require": [
         {
           "category": "eyes",
-          "feature": "brown"
+          "feature": "red"
         }
-      ],
-      "trait": ["more", "more"]
+      ]
     },
     {
       "require": [
         {
           "category": "eyes",
-          "feature": "green"
+          "feature": "blue"
+        },
+        {
+          "category": "color",
+          "feature": "white"
         }
-      ],
-      "trait": ["mid", "mid"]
+      ]
+    },
+    {
+      "require": [
+        {
+          "category": "pointer",
+          "feature_in": ["burma", "mink", "siam"]
+        }
+      ]
     },
     {
       "require": [
@@ -324,6 +334,24 @@
         }
       ],
       "trait": ["less", "less"]
+    },
+    {
+      "require": [
+        {
+          "category": "eyes",
+          "feature": "green"
+        }
+      ],
+      "trait": ["more", "less"]
+    },
+    {
+      "require": [
+        {
+          "category": "eyes",
+          "feature": "brown"
+        }
+      ],
+      "trait": ["more", "more"]
     }
   ],
   "KIT": [
@@ -381,7 +409,7 @@
       "require": [
         {
           "category": "spots",
-          "feature": "fading"
+          "feature": "salty licorice"
         }
       ],
       "trait": ["wsal", "wsal"]
@@ -446,6 +474,23 @@
     },
     {
       "trait": ["homo", "homo"]
+    }
+  ],
+  "VIT": [
+    {
+      "require": [
+        {
+          "category": "vitiligo",
+          "feature": "vitiligo"
+        }
+      ],
+      "trait": ["v", "v"]
+    },
+    {
+      "traits": [
+        ["V", "v"],
+        ["V", "V"]
+      ]
     }
   ],
   "X": [

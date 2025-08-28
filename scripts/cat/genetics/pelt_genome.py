@@ -90,7 +90,7 @@ class PeltGenome:
             self.genotype = genotype
             self.phenotype = self.get_phenotype()
         elif phenotype:
-            self.genotype = self.get_genotype(phenotype)
+            self.genotype = self.get_genotype_from_phenotype(phenotype)
             self.phenotype = phenotype
         else:
             self.random_genotype()
@@ -157,6 +157,25 @@ class PeltGenome:
             if given_trait == "" and random_number <= summe:
                 given_trait = options[option]["gen"]
         return given_trait
+
+    def get_allel_combination_probability(self, chromosome_key, comb) -> float:
+        chromosome = self.pelt_genotypes[chromosome_key]
+        # are all entries valid?
+        for allel in comb:
+            if not allel in chromosome:
+                return 0
+        # edge cases: len(comb) != 2
+        if len(comb) == 0:
+            return 0
+        if len(comb) == 1:
+            return chromosome[comb[0]]["rarity"] / 100
+        if len(comb) > 2:
+            return 0
+        # general case: comb consists of two allels
+        if comb[0] != comb[1]:
+            return (chromosome[comb[0]]["rarity"] / 100) * (chromosome[comb[1]]["rarity"] / 100) * 2
+        else:
+            return (chromosome[comb[0]]["rarity"] / 100) * (chromosome[comb[1]]["rarity"] / 100)
 
     # ------------------------------------------------------------------------------------------------------------#
     #   REALISTIC INHERITANCE
@@ -245,12 +264,106 @@ class PeltGenome:
                 return False
         return True
 
-    def get_genotype(self, pelt) -> dict:
+    def get_genotype(self, pelt, sex, permanent_conditions = {}) -> dict:
         phenotype = {}
 
-        # color
+        # color & diluted & hair tips
+        all_series = [self.pelt_colours_black_series, self.pelt_colours_brown_series, self.pelt_colours_cinnamon_series, self.pelt_colours_red_series]
+        possibilities = []
+        for i in range(len(all_series)):
+            if pelt.colour in all_series[i]:
+                possibilities.append(i)
+        i = 4
+        if len(possibilities) > 0:
+            i = choice(possibilities)
+        phenotype["color"] = [["black", "brown", "cinnamon", "red", "white"][i]]
+        ### find position in series
+        try:
+            j = choice([k for k, x in enumerate(all_series[i]) if x == pelt.colour])
+            phenotype["diluted"] = [["full-color", "diluted", "caramelized"][int(j/3)]]
+            phenotype["hair tips"] = [["full-color", "smoked", "shaded"][j % 3]]
+        except ValueError:
+            phenotype["diluted"] = [choice(["full-color", "diluted", "caramelized"])]
+            if random.random() > self.get_allel_combination_probability("D2", ["i", "i"]): # smoked/shaded or full-color?
+                # no stripes -> smoked
+                if pelt.name in ["SingleColour", "TwoColour"]:
+                    phenotype["hair tips"] = ["smoked"]
+                else: # stripes -> shaded
+                    phenotype["hair tips"] = ["shaded"]
+            else:
+                phenotype["hair tips"] = ["full-color"]
 
-        # 
+        # eyes
+        all_eye_colors = [pelt.blue_eyes, pelt.green_eyes, pelt.yellow_eyes, ["COPPER"], ["BRONZE", "AMBER", "HAZEL"]]
+        possibilities = []
+        for i in range(len(all_eye_colors)):
+            if pelt.eye_color in all_eye_colors[i]:
+                possibilities.append(i)
+        i = 0
+        if len(possibilities) > 0:
+            i = choice(possibilities)
+        phenotype["eyes"] = [["blue", "green", "yellow", "red", "brown"][i]]
+
+        # hearing
+        if "deaf" in permanent_conditions:
+            phenotype["hearing"] = ["deaf"]
+        else:
+            phenotype["hearing"] = ["hearing"]
+
+        # length
+        phenotype["length"] = [pelt.length]
+
+        # pointer
+        if pelt.points is None:
+            phenotype["pointer"] = ["full-color"]
+        elif pelt.points in ["SEALPOINT", "MINKPOINT"]:
+            phenotype["pointer"] = ["mink"]
+        elif pelt.points == "COLOURPOINT":
+            phenotype["pointer"] = ["burma"]
+        elif pelt.points == "RAGDOLL":
+            phenotype["pointer"] = ["siam"]
+        else:
+            phenotype["pointer"] = ["full-color"]
+            if phenotype["hair tips"][0] == "full_color": # pelt.points = SEPIAPOINT -> cat should be smoked or shaded
+                if pelt.name in ["SingleColour", "TwoColour"]:
+                    phenotype["hair tips"] = ["smoked"]
+                else:
+                    phenotype["hair tips"] = ["shaded"]
+
+        # sex
+        phenotype["sex"] = [sex]
+
+        # spots
+        if pelt.white_patches is None:
+            phenotype["spots"] = ["full-color"]
+        elif pelt.white_patches in pelt.tuxedo_white and pelt.vitiligo in ["VITILIGO", "VITILIGOTWO"]:
+            phenotype["spots"] = ["salty licorice"]
+        else:
+            all_spot_possibilities = [pelt.little_white, pelt.mid_white, pelt.high_white, pelt.mostly_white, pelt.paws_white]
+            possibilities = []
+            for i in range(len(all_spot_possibilities)):
+                if pelt.eye_color in all_eye_colors[i]:
+                    possibilities.append(i)
+            i = 0
+            if len(possibilities) > 0:
+                i = choice(possibilities)
+            phenotype["spots"] = [["small white spots", "small white spots", "big white spots", "big white spots", "gloves"][i]]
+
+        # stripes
+        if pelt.name in ["SingleColour", "TwoColour"]:
+            phenotype["stripes"] = ["no stripes"]
+        else:
+            all_stripe_series = [self.pelt_patterns_mackerel, self.pelt_patterns_blotched, self.pelt_patterns_spotted, self.pelt_patterns_ticked]
+            possibilities = []
+            for i in range(len(all_stripe_series)):
+                if pelt.name in all_stripe_series[i]:
+                    possibilities.append(i)
+            phenotype["stripes"] = [["mackerel", "blotched", "spotted", "ticked"][choice(possibilities)]]
+        
+        # vitiligo
+        phenotype["vitiligo"] = ["full-color"]
+        if not pelt.vitiligo is None and (phenotype["spots"] != ["salty licorice"] or random.random() < 0.1):
+            phenotype["vitiligo"] = ["vitiligo"]
 
         return self.get_genotype_from_phenotype(phenotype)
 
@@ -265,7 +378,11 @@ class PeltGenome:
                     if "trait" in option.keys():
                         result = option["trait"]
                     elif "traits" in option.keys():
-                        result = choice(option["traits"])
+                        # get distribution
+                        distribution = []
+                        for poss in option["traits"]:
+                            distribution.append(self.get_allel_combination_probability(locus, poss))
+                        result = random.choices(option["traits"], weights=distribution)
                     else:
                         result = [
                             self.random_trait(self.pelt_genotypes[locus]),

@@ -372,16 +372,7 @@
       "trait": "siam"
     },
     {
-      "require": [
-        {
-          "gen": "ca",
-          "locus": "D1"
-        }
-      ],
-      "trait": "blue-eyed albino"
-    },
-    {
-      "trait": "albino"
+      "trait": "full-color"
     }
   ],
   "sex": [
@@ -441,7 +432,7 @@
           "locus": "KIT"
         }
       ],
-      "trait": "fading"
+      "trait": "salty licorice"
     },
     {
       "trait": "full-color"
@@ -507,6 +498,20 @@
     },
     {
       "trait": "blotched"
+    }
+  ],
+  "vitiligo": [
+    {
+      "require": [
+        {
+          "gen": ["v", "v"],
+          "locus": "VIT"
+        }
+      ],
+      "trait": "vitiligo"
+    },
+    {
+      "trait": "full-color"
     }
   ]
 }

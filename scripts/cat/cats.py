@@ -488,6 +488,16 @@ class Cat:
 
         if not skill_dict:
             self.skills = CatSkills.generate_new_catskills(self.status.rank, self.age)
+        
+        print("Anomasie here:")
+        print(self.pelt_genome.genotype)
+        print()
+        print(self.pelt_genome.phenotype)
+        print(self.pelt.colour)
+        print()
+        print(self.pelt_genome.get_genotype(self.pelt, self.gender, self.permanent_condition))
+        print()
+        print()
 
     def __repr__(self):
         return "CAT OBJECT:" + self.ID

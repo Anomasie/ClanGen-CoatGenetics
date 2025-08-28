@@ -539,6 +539,31 @@ class Pelt:
         "SILVER",
         "ORANGE",
     ]
+    paws_white = [
+        "PAWS",
+        "TOES",
+        "TOESTAIL",
+        "DIVA",
+        "DOUGIE"
+    ]
+    tuxedo_white = [
+        "BOWTIE",
+        "DIGIT",
+        "FANCY",
+        "FCONE",
+        "FCTWO",
+        "MIA",
+        "MITAINE",
+        "PRINCESS",
+        "SAVANNAH",
+        "TUXEDO",
+        "BUB",
+        "BROKEN",
+        "FRONT",
+        "PIEBALD",
+        "SCAR",
+        "TRIXIE"
+    ]
     little_white = [
         "LITTLE",
         "LIGHTTUXEDO",
@@ -1241,19 +1266,30 @@ class Pelt:
             else:
                 self.colour = pelt_genome.pelt_colours_red_series[ pelt_colours_series_offset ]
 
+         # vitiligo
+        if "fading" in pelt_genome.phenotype["spots"]:
+            self.vitiligo = choice(self.vit)
+        else:
+            self.vitiligo = None
+
         # white_patches
-        if "full-color" in pelt_genome.phenotype["spots"]:
-            self.white_patches = None
-        elif "small white spots" in pelt_genome.phenotype["spots"]:
-            self.white_patches = choice(choice([self.little_white, self.mid_white]))
+        if "small white spots" in pelt_genome.phenotype["spots"]:
+            self.white_patches = choice(self.little_white + self.mid_white)
         elif "big white spots" in pelt_genome.phenotype["spots"]:
-            self.white_patches = choice(choice([self.high_white, self.mostly_white]))
+            self.white_patches = choice(self.high_white + self.mostly_white)
+        elif "gloves" in pelt_genome.phenotype["spots"]: # gloves:
+            self.white_patches = choice(self.paws_white)
+        elif "salty licorice" in pelt_genome.phenotype["spots"]:
+            self.white_patches = choice(self.tuxedo_white)
+            self.vitiligo = choice(["VITILIGO", "VITILIGOTWO"])
+
+        # else: self.white_patches = None
         
         # eye_color
         self.eye_color = pelt_genome.get_pelt_eye_color(self, pelt_genome.phenotype["eyes"][0])
         # eye_colour2
         if len(pelt_genome.phenotype["eyes"]) > 1:
-            self.eye_colour2 = pelt_genome.get_pelt_eye_color(self, pelt_genome.phenotype["eyes"][1])
+            self.eye_colour2 = pelt_genome.get_pelt_eye_color(self, "blue")
         else:
             self.eye_colour2 = None
 
@@ -1285,12 +1321,6 @@ class Pelt:
             self.tortie_marking = None
             self.tortie_pattern = None
         
-        # vitiligo
-        if "fading" in pelt_genome.phenotype["spots"]:
-            self.vitiligo = choice(self.vit)
-        else:
-            self.vitiligo = None
-
         # points
         self.points = None
         if self.colour != "WHITE":

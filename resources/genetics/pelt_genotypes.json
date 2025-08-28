@@ -96,31 +96,31 @@
       "gen": "C",
       "name": "wildtype",
       "note": "dominant",
-      "rarity": 30
+      "rarity": 60
     },
     "cb": {
       "gen": "cb",
       "name": "burma points",
       "note": "yellow eyes",
-      "rarity": 20,
+      "rarity": 10,
       "trivia": "This is similar to the same as in russian rabbits-modification, where the rabbits's fur depends on its surrounding temperature.'"
     },
     "cs": {
       "gen": "cs",
       "name": "siamese points",
       "note": "burma + siamese makes the mink type which have aqua eyes. Siamese cats have blue ones.",
-      "rarity": 20
+      "rarity": 10
     },
     "ca": {
       "gen": "ca",
       "name": "blue-eyed albino",
-      "rarity": 15
+      "rarity": 10
     },
     "c": {
       "gen": "c",
       "name": "albino",
       "note": "I don't know whether this is co-recessive or recessive to ca, but it sounds more likely that ca > c.",
-      "rarity": 15
+      "rarity": 10
     }
   },
   "D2": {
@@ -186,26 +186,26 @@
       "gen": "Ws",
       "name": "white spots",
       "note": "Co-dominant with wild-type. Heterozygot cats are 0-50% white, homozygot cats 50-100%.",
-      "rarity": 15,
+      "rarity": 10,
       "trivia": "Because of the less melatonin, cats with white colored ears are likely to be deaf."
     },
     "w": {
       "gen": "w",
       "name": "wildtype",
       "note": "Co-dominant with Ws",
-      "rarity": 34
+      "rarity": 50
     },
     "wg": {
       "gen": "wg",
       "name": "gloves or boots",
       "note": "I couldn't found affections by other gens, but notation makes it sound like it is recessive.",
-      "rarity": 20
+      "rarity": 30
     },
     "wsal": {
       "gen": "wsal",
-      "name": "white fading",
+      "name": "salty licorice",
       "note": "Not well documented. Here, it will be recessive to all other genes and cause one of the Vitiligo options.",
-      "rarity": 30
+      "rarity": 9
     }
   },
   "LEN": {
@@ -230,6 +230,19 @@
       "gen": "homo",
       "name": "homochrome eyes",
       "rarity": 95
+    }
+  },
+  "VIT": {
+    "V": {
+      "gen": "V",
+      "name": "resistant",
+      "note": "Not well documented. Here, vitiligo is recessive. It could be an autoimmune disorder or stress-caused.",
+      "rarity": 85
+    },
+    "v": {
+      "gen": "v",
+      "name": "vitiligo",
+      "rarity": 15
     }
   },
   "X": {
