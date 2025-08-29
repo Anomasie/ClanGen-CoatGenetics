@@ -1270,8 +1270,10 @@ class Pelt:
     @staticmethod
     def get_pelt_from_genome(pelt_genome):
         new_pelt = Pelt()
+        
         # length
         new_pelt.length = pelt_genome.phenotype["length"][0]
+        
         # colour
         pelt_colours_series_offset = int(
             int("diluted" in pelt_genome.phenotype["diluted"]) * 3

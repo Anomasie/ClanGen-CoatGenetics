@@ -250,32 +250,6 @@ class PeltGenome:
     def get_phenotype_from_pelt(self, pelt, sex, permanent_conditions = {}) -> dict:
         phenotype = {}
 
-        # color & diluted & hair tips
-        all_series = [self.pelt_colours_black_series, self.pelt_colours_brown_series, self.pelt_colours_cinnamon_series, self.pelt_colours_red_series]
-        possibilities = []
-        for i in range(len(all_series)):
-            if pelt.colour in all_series[i]:
-                possibilities.append(i)
-        i = 4
-        if len(possibilities) > 0:
-            i = choice(possibilities)
-        phenotype["color"] = [["black", "brown", "cinnamon", "red", "white"][i]]
-        ### find position in series
-        try:
-            j = choice([k for k, x in enumerate(all_series[i]) if x == pelt.colour])
-            phenotype["diluted"] = [["full-color", "diluted", "caramelized"][int(j/3)]]
-            phenotype["hair tips"] = [["full-color", "smoked", "shaded"][j % 3]]
-        except ValueError:
-            phenotype["diluted"] = [choice(["full-color", "diluted", "caramelized"])]
-            if random.random() > self.get_allel_combination_probability("D2", ["i", "i"]): # smoked/shaded or full-color?
-                # no stripes -> smoked
-                if pelt.name in ["SingleColour", "TwoColour"]:
-                    phenotype["hair tips"] = ["smoked"]
-                else: # stripes -> shaded
-                    phenotype["hair tips"] = ["shaded"]
-            else:
-                phenotype["hair tips"] = ["full-color"]
-
         # eyes
         all_eye_colors = [pelt.blue_eyes, pelt.green_eyes, pelt.yellow_eyes, ["COPPER"], ["BRONZE", "AMBER", "HAZEL"]]
         possibilities = []
@@ -349,6 +323,45 @@ class PeltGenome:
         phenotype["vitiligo"] = ["full-color"]
         if not pelt.vitiligo is None and (phenotype["spots"] != ["salty licorice"] or random.random() < 0.1):
             phenotype["vitiligo"] = ["vitiligo"]
+        
+        # color & diluted & hair tips
+        ## get possible base colors
+        all_series = [self.pelt_colours_black_series, self.pelt_colours_brown_series, self.pelt_colours_cinnamon_series, self.pelt_colours_red_series, ["WHITE"]]
+        possibilities = []
+        for i in range(len(all_series)):
+            if pelt.colour in all_series[i]:
+                possibilities.append(i)
+        i = 4
+        ### red cats always have stripes => if stripes, then prefer non-red color
+        if phenotype["stripes"] == ["no stripes"]:
+            if possibilities != [3]:
+                possibilities.remove(3)
+            else:
+                phenotype["color"] = ["red"]
+                phenotype["stripes"].append("light")
+        ### white cats don't have stripes, spots, pointer
+        if not pelt.name in ["SingleColour", "TwoColour"] or not pelt.white_patches is None or not pelt.points is None:
+            if possibilities != [4]:
+                possibilities.remove(4)
+        ## choose base color
+        if len(possibilities) > 0:
+            i = choice(possibilities)
+        phenotype["color"] = [["black", "brown", "cinnamon", "red", "white"][i]]
+        ### find position in series
+        try:
+            j = choice([k for k, x in enumerate(all_series[i]) if x == pelt.colour])
+            phenotype["diluted"] = [["full-color", "diluted", "caramelized"][int(j/3)]]
+            phenotype["hair tips"] = [["full-color", "smoked", "shaded"][j % 3]]
+        except ValueError:
+            phenotype["diluted"] = [choice(["full-color", "diluted", "caramelized"])]
+            if random.random() > self.get_allel_combination_probability("D2", ["i", "i"]): # smoked/shaded or full-color?
+                # no stripes -> smoked
+                if pelt.name in ["SingleColour", "TwoColour"]:
+                    phenotype["hair tips"] = ["smoked"]
+                else: # stripes -> shaded
+                    phenotype["hair tips"] = ["shaded"]
+            else:
+                phenotype["hair tips"] = ["full-color"]
 
         return phenotype
 
