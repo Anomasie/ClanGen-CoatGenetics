@@ -291,7 +291,7 @@
       "require": [
         {
           "locus": "KIT",
-          "gen": "wp"
+          "gen": "Wp"
         }
       ],
       "trait": "deaf"

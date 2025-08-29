@@ -514,7 +514,7 @@
           "feature": "female"
         }
       ],
-      "trait": ["O, O"]
+      "trait": ["O", "O"]
     },
     {
       "require": [

@@ -326,6 +326,8 @@ class Cat:
         # pelt input
         if get_clan_setting("realistic pelt behavior") and pelt_genotype:
             pelt = Pelt.generate_new_pelt_from_genome(self.pelt_genome)
+            if not example and "deaf" in self.pelt_genome.phenotype["hearing"]:
+                self.get_permanent_condition(name="deaf", born_with=True)
         elif not get_clan_setting("realistic pelt behavior") and pelt:
             self.pelt_genome.init_from_pelt(pelt, self.gender, self.permanent_condition)
 
@@ -444,6 +446,8 @@ class Cat:
             else:
                 self.pelt_genome.randomize(sex=self.gender)
             self.pelt = Pelt.generate_new_pelt_from_genome(self.pelt_genome, self.age)
+            if not self.example and "deaf" in self.pelt_genome.phenotype["hearing"]:
+                self.get_permanent_condition("deaf", True)
         else:
             self.pelt = Pelt.generate_new_pelt(
                 self.gender,
