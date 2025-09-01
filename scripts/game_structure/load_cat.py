@@ -172,8 +172,8 @@ def json_load():
                 accessory=cat["accessory"],
                 opacity=cat["opacity"] if "opacity" in cat else 100,
             )
-            if not new_cat.pelt_genome:
-                print("Anomasie here: create new pelt_genome!")
+            if not new_cat.pelt_genome or not new_cat.pelt_genome.check_genotype(): # this should not happen unless the json data is corrupted 
+                print("Create new pelt_genome for ", new_cat.name)
                 new_cat.pelt_genome = PeltGenome(pelt=new_cat.pelt, sex=new_cat.gender, permanent_conditions=new_cat.permanent_condition)
 
             # Runs a bunch of appearance-related conversion of old stuff.

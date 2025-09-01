@@ -95,26 +95,18 @@ class PeltGenome:
         permanent_conditions = {}
     ) -> None:
         if genotype:
-            print("Anomasie in pelt_genome: load genome")
             self.genotype = genotype
             self.phenotype = self.get_phenotype_from_genotype()
         elif phenotype:
-            print("Anomaise in pelt_genome: load from phenotype")
             self.genotype = self.get_genotype_from_phenotype(phenotype)
             self.phenotype = phenotype
         elif pelt:
-            print("Anomasie in pelt_genome: create from pelt")
             self.init_from_pelt(pelt, sex, permanent_conditions)
         else:
-            print("Anomasie in pelt_genome: randomize")
             self.randomize(sex)
             if "deaf" in permanent_conditions:
                 self.phenotype["hearing"] = ["deaf"]
         
-        print(self.genotype)
-        print(self.phenotype)
-        print()
-
     def init_from_pelt(self, pelt, sex, permanent_conditions = {}):
         self.phenotype = self.get_phenotype_from_pelt(pelt, sex, permanent_conditions)
         self.genotype = self.get_genotype_from_phenotype(self.phenotype)
@@ -175,7 +167,6 @@ class PeltGenome:
     # ------------------------------------------------------------------------------------------------------------#
 
     def from_parents( self, parent_1, parent_2, sex=None):
-        print("Anomasie in pelt_genome: from parents")
         # generate kitten_dna
         self.genotype = {}
         # go through every chromosome
@@ -190,9 +181,6 @@ class PeltGenome:
                 self.genotype["X"] = [choice(parent_2.genotype["X"])]
         # set other variables
         self.phenotype = self.get_phenotype_from_genotype()
-        print(self.genotype)
-        print(self.phenotype)
-        print()
 
     # ------------------------------------------------------------------------------------------------------------#
     #   GENOTYPE <-> PHENOTYPE <-> PELT
@@ -324,7 +312,6 @@ class PeltGenome:
                 phenotype["stripes"].append("light")
         ### white cats don't have stripes, spots, pointer
         if pelt.colour == "WHITE" and pelt.name in ["SingleColour", "TwoColour"] and pelt.white_patches is None and pelt.points is None:
-            print("make it white!")
             possibilities = [4]
         elif 4 in possibilities: 
             possibilities.remove(4)

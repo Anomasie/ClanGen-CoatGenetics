@@ -300,7 +300,6 @@ class Cat:
             self.backstory = self.backstory  # fixme why does this exist
 
         # pelt genome
-        print("Anomasie in cats.py: ", prefix)
         if not loading_cat: # then pelt & genotype will be set in load_cat.py
             if get_clan_setting("realistic pelt behavior"):
                 # set pelt & genes
@@ -312,8 +311,6 @@ class Cat:
             else:
                 # set pelt & genes
                 self.pelt = pelt if pelt else Pelt()
-                print("load pelt:", pelt)
-                print(self.pelt.colour, self.pelt.name)
                 if pelt_genotype:
                     self.pelt_genome = PeltGenome(genotype=pelt_genotype)
                 else:
@@ -453,18 +450,14 @@ class Cat:
 
         # APPEARANCE
         if get_clan_setting("realistic pelt behavior"):
-            print("Anomasie in cats.py: from parents")
             # set pelt & genes
-            print("parent1", self.parent1)
             parent1 = Cat.fetch_cat(self.parent1).pelt_genome if self.parent1 else PeltGenome(sex="male")
-            print("parent2:", self.parent2)
             if self.parent2:
                 parent2 = Cat.fetch_cat(self.parent2).pelt_genome
             elif self.parent2_pelt_genes:
                 parent2 = self.parent2_pelt_genes
             else:
                 parent2 = PeltGenome(sex="female")
-            print("kitten:")
             self.pelt_genome.from_parents(parent1, parent2, sex=self.gender)
             self.pelt = Pelt.generate_new_pelt_from_genome(self.pelt_genome, self.age)
             # permanent conditions
@@ -3223,9 +3216,6 @@ class Cat:
         if self.pelt.rebuild_sprite or self.not_working() != self._sprite_working:
             self.pelt.rebuild_sprite = False
             self._sprite_working = self.not_working()
-
-            print("Anomasie in cats.py: ", self.pelt.tortie_colour, self.pelt.tortie_base, self.pelt.tortie_pattern)
-
             update_sprite(self)
             update_mask(self)
         return self._sprite

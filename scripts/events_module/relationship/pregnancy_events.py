@@ -808,9 +808,7 @@ class Pregnancy_Events:
         #############################
 
         #### GENERATE THE KITS ######
-        print("Anomasie in pregnancy_events.py:")
         if get_clan_setting("realistic pelt behavior") and not other_cat:
-            print("new other cat:")
             parent2_genes = PeltGenome()
 
         for kit in range(kits_amount):
@@ -845,9 +843,7 @@ class Pregnancy_Events:
                 kit.thought = event_text_adjust(Cat, kit.thought, random_cat=cat)
             else:
                 # A one blood parent litter is the only option left.
-                print("Anomasie in pregnancy_events.py:")
                 if get_clan_setting("realistic pelt behavior") and not other_cat:
-                    print("kit:")
                     kit = Cat(parent1=cat.ID, parent2_pelt_genes=parent2_genes, moons=0)
                 else:
                     kit = Cat(parent1=cat.ID, moons=0, backstory=backstory)
