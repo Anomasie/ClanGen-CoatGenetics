@@ -1268,6 +1268,15 @@ class Pelt:
         return choice(self.yellow_eyes)
     
     @staticmethod
+    def get_colour_name_in_series(pelt_genome, colour_name, pelt_colours_series_offset:int):
+        match colour_name:
+            case "black": return pelt_genome.pelt_colours_black_series[ pelt_colours_series_offset ]
+            case "brown": return pelt_genome.pelt_colours_brown_series[ pelt_colours_series_offset ]
+            case "cinnamon": return pelt_genome.pelt_colours_cinnamon_series[ pelt_colours_series_offset ]
+            case "red": return pelt_genome.pelt_colours_red_series[ pelt_colours_series_offset ]
+        return "WHITE"
+
+    @staticmethod
     def get_pelt_from_genome(pelt_genome):
         new_pelt = Pelt()
         
@@ -1281,17 +1290,7 @@ class Pelt:
             + int("smoked" in pelt_genome.phenotype["hair tips"])
             + int("shaded" in pelt_genome.phenotype["hair tips"]) * 2
         )
-        if "white" in pelt_genome.phenotype["color"]:
-            new_pelt.colour = "WHITE"
-        else:
-            if "black" in pelt_genome.phenotype["color"]:
-                new_pelt.colour = pelt_genome.pelt_colours_black_series[ pelt_colours_series_offset ]
-            elif "brown" in pelt_genome.phenotype["color"]:
-                new_pelt.colour = pelt_genome.pelt_colours_brown_series[ pelt_colours_series_offset ]
-            elif "brown" in pelt_genome.phenotype["color"]:
-                new_pelt.colour = pelt_genome.pelt_colours_cinnamon_series[ pelt_colours_series_offset ]
-            else:
-                new_pelt.colour = pelt_genome.pelt_colours_red_series[ pelt_colours_series_offset ]
+        new_pelt.colour = Pelt.get_colour_name_in_series(pelt_genome, pelt_genome.phenotype["color"][-1], pelt_colours_series_offset)
 
          # vitiligo
         if "fading" in pelt_genome.phenotype["spots"]:
@@ -1341,13 +1340,14 @@ class Pelt:
         
         ## torties
         if len(pelt_genome.phenotype["color"]) > 1:
-            new_pelt.tortie_base = new_pelt.name
-            new_pelt.tortie_color = pelt_genome.pelt_colours_red_series[ pelt_colours_series_offset ]
+            new_pelt.tortie_base = new_pelt.sprites_names[new_pelt.name]
+            new_pelt.tortie_colour = Pelt.get_colour_name_in_series(pelt_genome, pelt_genome.phenotype["color"][0], pelt_colours_series_offset)
             new_pelt.tortie_marking = choice(new_pelt.tortie_patterns)
-            new_pelt.tortie_pattern = new_pelt.name
+            new_pelt.tortie_pattern = new_pelt.sprites_names[new_pelt.name]
+            new_pelt.name = "Calico" if new_pelt.white_patches else "Tortie"
         else:
             new_pelt.tortie_base = None
-            new_pelt.tortie_color = None
+            new_pelt.tortie_colour = None
             new_pelt.tortie_marking = None
             new_pelt.tortie_pattern = None
         

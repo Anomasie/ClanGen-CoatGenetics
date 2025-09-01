@@ -8,6 +8,7 @@ import ujson
 
 from scripts.cat.cats import Cat, BACKSTORIES
 from ..cat.enums import CatGroup, CatRank
+from scripts.cat.genetics.pelt_genome import PeltGenome
 from scripts.cat.pelts import Pelt
 from scripts.cat_relations.inheritance import Inheritance
 from scripts.game_structure.game.switches import (
@@ -171,6 +172,9 @@ def json_load():
                 accessory=cat["accessory"],
                 opacity=cat["opacity"] if "opacity" in cat else 100,
             )
+            if not new_cat.pelt_genome:
+                print("Anomasie here: create new pelt_genome!")
+                new_cat.pelt_genome = PeltGenome(pelt=new_cat.pelt, sex=new_cat.gender, permanent_conditions=new_cat.permanent_condition)
 
             # Runs a bunch of appearance-related conversion of old stuff.
             new_cat.pelt.check_and_convert(convert)

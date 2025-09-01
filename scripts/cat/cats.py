@@ -124,6 +124,7 @@ class Cat:
         backstory="clanborn",
         parent1=None,
         parent2=None,
+        parent2_pelt_genes=None,
         adoptive_parents=None,
         suffix=None,
         specsuffix_hidden=False,
@@ -187,9 +188,8 @@ class Cat:
         )
         self.parent1 = parent1
         self.parent2 = parent2
+        self.parent2_pelt_genes = parent2_pelt_genes # only needed if kitten with unknown second parent
         self.adoptive_parents = adoptive_parents if adoptive_parents else []
-        self.pelt_genome = PeltGenome(genotype=pelt_genotype)
-        self.pelt = pelt if pelt else Pelt().get_pelt_from_genome(self.pelt_genome)
         self.former_mentor = []
         self.patrol_with_mentor = 0
         self.apprentice = []
@@ -299,6 +299,29 @@ class Cat:
         else:
             self.backstory = self.backstory  # fixme why does this exist
 
+        # pelt genome
+        print("Anomasie in cats.py: ", prefix)
+        if not loading_cat: # then pelt & genotype will be set in load_cat.py
+            if get_clan_setting("realistic pelt behavior"):
+                # set pelt & genes
+                self.pelt_genome = PeltGenome(genotype=pelt_genotype)
+                self.pelt = pelt if pelt else Pelt().get_pelt_from_genome(self.pelt_genome)
+                # permanent conditions
+                if not example and "deaf" in self.pelt_genome.phenotype["hearing"]:
+                    self.get_permanent_condition(name="deaf", born_with=True)
+            else:
+                # set pelt & genes
+                self.pelt = pelt if pelt else Pelt()
+                print("load pelt:", pelt)
+                print(self.pelt.colour, self.pelt.name)
+                if pelt_genotype:
+                    self.pelt_genome = PeltGenome(genotype=pelt_genotype)
+                else:
+                    self.pelt_genome = PeltGenome(pelt=self.pelt)
+        else:
+            self.pelt_genome = PeltGenome(genotype=pelt_genotype)
+            self.pelt = pelt if pelt else Pelt()
+
         # sex!?!??!?!?!??!?!?!?!??
         if self.gender is None:
             self.gender = "female" if disable_random else choice(["female", "male"])
@@ -322,17 +345,6 @@ class Cat:
             )
         else:
             biome = None
-        
-        # pelt input
-        if get_clan_setting("realistic pelt behavior") and pelt_genotype:
-            pelt = Pelt.generate_new_pelt_from_genome(self.pelt_genome)
-            if not example and "deaf" in self.pelt_genome.phenotype["hearing"]:
-                self.get_permanent_condition(name="deaf", born_with=True)
-        elif not get_clan_setting("realistic pelt behavior") and pelt:
-            self.pelt_genome.init_from_pelt(pelt, self.gender, self.permanent_condition)
-
-        # NAME
-        # load_existing_name is needed so existing cats don't get their names changed/fixed for no reason
 
         if self.pelt is not None:
             self.name = Name(
@@ -441,20 +453,32 @@ class Cat:
 
         # APPEARANCE
         if get_clan_setting("realistic pelt behavior"):
-            if self.parent1 and self.parent2:
-                self.pelt_genome.from_parents(self.parent1.pelt_genome, self.parent2.pelt_genome, sex=self.gender)
+            print("Anomasie in cats.py: from parents")
+            # set pelt & genes
+            print("parent1", self.parent1)
+            parent1 = Cat.fetch_cat(self.parent1).pelt_genome if self.parent1 else PeltGenome(sex="male")
+            print("parent2:", self.parent2)
+            if self.parent2:
+                parent2 = Cat.fetch_cat(self.parent2).pelt_genome
+            elif self.parent2_pelt_genes:
+                parent2 = self.parent2_pelt_genes
             else:
-                self.pelt_genome.randomize(sex=self.gender)
+                parent2 = PeltGenome(sex="female")
+            print("kitten:")
+            self.pelt_genome.from_parents(parent1, parent2, sex=self.gender)
             self.pelt = Pelt.generate_new_pelt_from_genome(self.pelt_genome, self.age)
+            # permanent conditions
             if not self.example and "deaf" in self.pelt_genome.phenotype["hearing"]:
-                self.get_permanent_condition("deaf", True)
+                self.get_permanent_condition(name="deaf", born_with=True)
         else:
+            # set pelt & genes
             self.pelt = Pelt.generate_new_pelt(
                 self.gender,
                 [Cat.fetch_cat(i) for i in (self.parent1, self.parent2) if i],
                 self.age,
             )
-        
+            self.pelt_genome = PeltGenome(pelt=self.pelt, sex=self.gender, permanent_conditions=self.permanent_condition)
+       
         # Personality
         if disable_random:
             self.personality = Personality(
@@ -3199,6 +3223,9 @@ class Cat:
         if self.pelt.rebuild_sprite or self.not_working() != self._sprite_working:
             self.pelt.rebuild_sprite = False
             self._sprite_working = self.not_working()
+
+            print("Anomasie in cats.py: ", self.pelt.tortie_colour, self.pelt.tortie_base, self.pelt.tortie_pattern)
+
             update_sprite(self)
             update_mask(self)
         return self._sprite

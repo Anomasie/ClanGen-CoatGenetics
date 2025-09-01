@@ -72,6 +72,11 @@ class PeltGenome:
         "Agouti",
         "Singlestripe"
     ]
+    pelt_patterns_no_stripes = [
+        "SingleColour",
+        "TwoColour",
+        "Smoke"
+    ]
 
     # load json files
     with open('resources/genetics/pelt_genotypes.json') as f:
@@ -84,17 +89,31 @@ class PeltGenome:
     def __init__(
         self,
         genotype: dict = None,
-        phenotype: dict = None
+        phenotype: dict = None,
+        pelt = None,
+        sex = None,
+        permanent_conditions = {}
     ) -> None:
         if genotype:
+            print("Anomasie in pelt_genome: load genome")
             self.genotype = genotype
             self.phenotype = self.get_phenotype_from_genotype()
         elif phenotype:
+            print("Anomaise in pelt_genome: load from phenotype")
             self.genotype = self.get_genotype_from_phenotype(phenotype)
             self.phenotype = phenotype
+        elif pelt:
+            print("Anomasie in pelt_genome: create from pelt")
+            self.init_from_pelt(pelt, sex, permanent_conditions)
         else:
-            self.random_genotype()
-            self.phenotype = self.get_phenotype_from_genotype()
+            print("Anomasie in pelt_genome: randomize")
+            self.randomize(sex)
+            if "deaf" in permanent_conditions:
+                self.phenotype["hearing"] = ["deaf"]
+        
+        print(self.genotype)
+        print(self.phenotype)
+        print()
 
     def init_from_pelt(self, pelt, sex, permanent_conditions = {}):
         self.phenotype = self.get_phenotype_from_pelt(pelt, sex, permanent_conditions)
@@ -156,6 +175,7 @@ class PeltGenome:
     # ------------------------------------------------------------------------------------------------------------#
 
     def from_parents( self, parent_1, parent_2, sex=None):
+        print("Anomasie in pelt_genome: from parents")
         # generate kitten_dna
         self.genotype = {}
         # go through every chromosome
@@ -163,13 +183,16 @@ class PeltGenome:
             self.genotype[chromosome] = [choice(parent_1.genotype[chromosome]), choice(parent_2.genotype[chromosome])]
             self.genotype[chromosome].sort()
         # sex: male kittens get their X chromosome from their mother
-        if sex == "male" or random.random() < 0.5: # male kitten
+        if sex == "male" or (sex is None and random.random() < 0.5): # male kitten
             if parent_1.is_female():
                 self.genotype["X"] = [choice(parent_1.genotype["X"])]
             else: # if both parents are male, then the kitten gets the second parent's X-chromosome
                 self.genotype["X"] = [choice(parent_2.genotype["X"])]
         # set other variables
         self.phenotype = self.get_phenotype_from_genotype()
+        print(self.genotype)
+        print(self.phenotype)
+        print()
 
     # ------------------------------------------------------------------------------------------------------------#
     #   GENOTYPE <-> PHENOTYPE <-> PELT
@@ -276,12 +299,12 @@ class PeltGenome:
 
          # stripes
         phenotype["stripes"] = ["no stripes"]
-        if not pelt.name in ["SingleColour", "TwoColour"]:
-            all_stripe_series = [self.pelt_patterns_mackerel, self.pelt_patterns_blotched, self.pelt_patterns_spotted, self.pelt_patterns_ticked]
-            possibilities = []
-            for i in range(len(all_stripe_series)):
-                if pelt.name in all_stripe_series[i]:
-                    possibilities.append(i)
+        all_stripe_series = [self.pelt_patterns_mackerel, self.pelt_patterns_blotched, self.pelt_patterns_spotted, self.pelt_patterns_ticked]
+        possibilities = []
+        for i in range(len(all_stripe_series)):
+            if pelt.name in all_stripe_series[i]:
+                possibilities.append(i)
+        if len(possibilities) > 0:
             phenotype["stripes"] = [["mackerel", "blotched", "spotted", "ticked"][choice(possibilities)]]
 
         # color & diluted & hair tips
@@ -300,21 +323,22 @@ class PeltGenome:
                 phenotype["color"] = ["red"]
                 phenotype["stripes"].append("light")
         ### white cats don't have stripes, spots, pointer
-        if 4 in possibilities and possibilities != [4]:
-            if not pelt.name in ["SingleColour", "TwoColour"] or not pelt.white_patches is None or not pelt.points is None:
-                possibilities.remove(4)
-            else: # solid white cats are really rare otherwise
-                possibilities = [4]
+        if pelt.colour == "WHITE" and pelt.name in ["SingleColour", "TwoColour"] and pelt.white_patches is None and pelt.points is None:
+            print("make it white!")
+            possibilities = [4]
+        elif 4 in possibilities: 
+            possibilities.remove(4)
         ## choose base color
         if len(possibilities) > 0:
             i = choice(possibilities)
         phenotype["color"] = [["black", "brown", "cinnamon", "red", "white"][i]]
         ### find position in series
-        try:
-            j = choice([k for k, x in enumerate(all_series[i]) if x == pelt.colour])
+        possibilities = [k for k, x in enumerate(all_series[i]) if x == pelt.colour]
+        if len(possibilities) > 0:
+            j = choice(possibilities)
             phenotype["diluted"] = [["full-color", "diluted", "caramelized"][int(j/3)]]
             phenotype["hair tips"] = [["full-color", "smoked", "shaded"][j % 3]]
-        except ValueError:
+        else:
             phenotype["diluted"] = [choice(["full-color", "diluted", "caramelized"])]
             if random.random() > self.get_allel_combination_probability("D2", ["i", "i"]): # smoked/shaded or full-color?
                 # no stripes -> smoked

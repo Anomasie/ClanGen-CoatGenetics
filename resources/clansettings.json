@@ -106,7 +106,7 @@
         "realistic pelt behavior": [
             "Realistic fur pattern behavior",
             "If enabled, cats will only have realistic fur patterns and inheritance will follow real-world rules. Previous cats will still behave unrealisticly.",
-            true
+            false
         ],
         "single parentage": [
             "Allow cats to have kittens with an unknown second parent",

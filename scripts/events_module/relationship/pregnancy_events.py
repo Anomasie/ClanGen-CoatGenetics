@@ -7,6 +7,7 @@ import i18n
 from scripts.cat.cats import Cat
 from scripts.cat.enums import CatAge, CatGroup, CatRank, CatSocial
 from scripts.cat.names import names, Name
+from scripts.cat.genetics.pelt_genome import PeltGenome
 from scripts.cat_relations.relationship import Relationship, RelType
 from scripts.clan_package.settings import get_clan_setting
 from scripts.event_class import Single_Event
@@ -807,6 +808,11 @@ class Pregnancy_Events:
         #############################
 
         #### GENERATE THE KITS ######
+        print("Anomasie in pregnancy_events.py:")
+        if get_clan_setting("realistic pelt behavior") and not other_cat:
+            print("new other cat:")
+            parent2_genes = PeltGenome()
+
         for kit in range(kits_amount):
             if not cat:
                 # No parents provided, give a blood parent - this is an adoption.
@@ -839,7 +845,12 @@ class Pregnancy_Events:
                 kit.thought = event_text_adjust(Cat, kit.thought, random_cat=cat)
             else:
                 # A one blood parent litter is the only option left.
-                kit = Cat(parent1=cat.ID, moons=0, backstory=backstory)
+                print("Anomasie in pregnancy_events.py:")
+                if get_clan_setting("realistic pelt behavior") and not other_cat:
+                    print("kit:")
+                    kit = Cat(parent1=cat.ID, parent2_pelt_genes=parent2_genes, moons=0)
+                else:
+                    kit = Cat(parent1=cat.ID, moons=0, backstory=backstory)
                 kit.thought = i18n.t("hardcoded.new_kit_thought", name=str(cat.name))
                 kit.thought = event_text_adjust(Cat, kit.thought, random_cat=cat)
 
